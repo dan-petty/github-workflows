@@ -76,8 +76,30 @@ rulesets:
       - type: required_status_checks
         parameters:
           do_not_enforce_on_create: true
+          # The jobs of .github/workflows/ci.yml, so that a release pull request merges only after
+          # the checks of the template and the workflows pass. A job that its path filter skips
+          # reports its name as skipped, which passes. The gate job K8s stands for the call of
+          # k8s-validate.yml, whose check name differs between a skipped call and a call that ran.
           required_status_checks:
             - context: PR title / Semantic PR title
+              integration_id: 15368
+            - context: Changes
+              integration_id: 15368
+            - context: Private-data guard
+              integration_id: 15368
+            - context: YAML
+              integration_id: 15368
+            - context: actionlint
+              integration_id: 15368
+            - context: shellcheck
+              integration_id: 15368
+            - context: Repository template
+              integration_id: 15368
+            - context: kube-linter config
+              integration_id: 15368
+            - context: K8s script
+              integration_id: 15368
+            - context: K8s
               integration_id: 15368
           strict_required_status_checks_policy: false
       - type: code_scanning
