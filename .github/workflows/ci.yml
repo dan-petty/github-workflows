@@ -4,8 +4,8 @@ name: CI
 # job changes finds the tools whose files a change touches (dorny/paths-filter), and a check job runs
 # only when its filter matches. A manual run (workflow_dispatch, Actions tab or
 # `gh workflow run ci.yml`) runs every job. The private-data guard runs on each event, because a
-# change to any file can add private data. Each job installs its tools from mise.toml and mise.lock, and the Python tools from
-# uv.lock, as a local run does (README.md, "Checks").
+# change to any file can add private data. Each job installs its tools from mise.toml and
+# mise.lock, and the Python tools from uv.lock, as a local run does (README.md, "Checks").
 on:
   pull_request:
   push:
