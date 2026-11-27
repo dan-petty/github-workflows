@@ -4,10 +4,10 @@ name: Release
 # (README.md, "Releases"). On each push to main it opens or updates one release pull request, which
 # holds the next version in the files of the release-please config of the caller, and the new entry
 # of CHANGELOG.md. The workflow turns on auto-merge on the release pull request, and GitHub merges
-# it when its required checks pass. The next run creates the tag vX.Y.Z and
-# its GitHub release. Another repository calls the workflow at the commit <sha> of a release tag of
-# infra, with the tag in a comment, and Renovate updates both (README.md, "Call the reusable
-# workflows"):
+# it when its required checks pass. The next run creates the tag vX.Y.Z and its GitHub release.
+# Another repository calls the workflow at the commit <sha> of a release tag of this repository, with
+# the tag in a comment, and the copier update of the repository template moves both (README.md,
+# "Call the reusable workflows"):
 #
 #   on:
 #     push:
@@ -17,7 +17,7 @@ name: Release
 #   jobs:
 #     release:
 #       name: Release
-#       uses: dan-petty/infra/.github/workflows/release.yml@<sha> # vX.Y.Z
+#       uses: dan-petty/github-workflows/.github/workflows/release.yml@<sha> # vX.Y.Z
 #       permissions: {}
 #       secrets:
 #         RELEASE_APP_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
@@ -68,10 +68,10 @@ jobs:
     timeout-minutes: 10
     environment: release
     permissions: {}
-    # The runs of one branch do not overlap. The group has the prefix infra-, so it is not the group
-    # of a caller (README.md, "Call the reusable workflows").
+    # The runs of one branch do not overlap. The group has the prefix github-workflows-, so it is not
+    # the group of a caller (README.md, "Call the reusable workflows").
     concurrency:
-      group: infra-release-${{ github.ref }}
+      group: github-workflows-release-${{ github.ref }}
       cancel-in-progress: false
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}

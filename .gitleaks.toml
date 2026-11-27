@@ -1,5 +1,6 @@
-# The private-data guard of infra. infra is public, so it holds no private address, no name of a
-# local network, no device path, no real domain and no secret (devops-cli ADR 0032, decision 6).
+# The private-data guard of this repository. The repository is public, and its template writes files
+# into other repositories, so it holds no private address, no name of a local network, no device
+# path, no real domain and no secret (README.md, "Private-data guard").
 # scripts/private-data-scan.sh runs gitleaks with this file, in CI and in the pre-commit hook. When
 # the environment variable PRIVATE_DOMAINS is set, the script adds the rule private-domain at run
 # time, so no file holds a real domain. tests/test-private-data-scan.sh holds a case for each rule
@@ -13,14 +14,10 @@
 useDefault = true
 
 [[allowlists]]
-description = """The output of uv sync, tofu init and the chart and collection builds, which .gitignore \
-covers. The default allowlist of gitleaks skips .git and this file."""
+description = """The output of uv sync, which .gitignore covers. The default allowlist of gitleaks \
+skips .git and this file."""
 paths = [
   '''(?:^|/)\.venv/''',
-  '''(?:^|/)\.ansible/''',
-  '''(?:^|/)\.terraform/''',
-  '''(?:^|/)charts/[^/]+/charts/[^/]+\.tgz$''',
-  '''(?:^|/)dan_petty-infra-[^/]+\.tar\.gz$''',
 ]
 
 [[rules]]

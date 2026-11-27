@@ -1,5 +1,5 @@
-# The shared kube-linter checks of the templates of infra and of each repository that calls the
-# reusable workflow .github/workflows/k8s-validate.yml with no kube-linter-config input. The
+# The shared kube-linter checks of each repository that calls the reusable workflow
+# .github/workflows/k8s-validate.yml with no kube-linter-config input. The
 # workflow lints the rendered manifests of each Kustomize root and each Helm chart with this file.
 # A finding fails the job. tests/test-kube-linter-config.sh tests the custom check.
 #

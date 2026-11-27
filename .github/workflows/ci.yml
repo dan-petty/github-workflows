@@ -1,10 +1,10 @@
 name: CI
 
-# The checks of infra, on each pull request, each push to main and each manual run. The job changes
-# finds the tools whose files a change touches (dorny/paths-filter), and a check job runs only when
-# its filter matches. A manual run (workflow_dispatch, Actions tab or `gh workflow run ci.yml`) runs
-# every job. The private-data guard runs on each event, because a change to any file can add
-# private data. Each job installs its tools from mise.toml and mise.lock, and the Python tools from
+# The checks of this repository, on each pull request, each push to main and each manual run. The
+# job changes finds the tools whose files a change touches (dorny/paths-filter), and a check job runs
+# only when its filter matches. A manual run (workflow_dispatch, Actions tab or
+# `gh workflow run ci.yml`) runs every job. The private-data guard runs on each event, because a
+# change to any file can add private data. Each job installs its tools from mise.toml and mise.lock, and the Python tools from
 # uv.lock, as a local run does (README.md, "Checks").
 on:
   pull_request:
@@ -38,12 +38,9 @@ jobs:
       pull-requests: read
     outputs:
       k8s: ${{ steps.filter.outputs.k8s }}
-      tofu: ${{ steps.filter.outputs.tofu }}
-      ansible: ${{ steps.filter.outputs.ansible }}
       yaml: ${{ steps.filter.outputs.yaml }}
       actions: ${{ steps.filter.outputs.actions }}
       shell: ${{ steps.filter.outputs.shell }}
-      renovate: ${{ steps.filter.outputs.renovate }}
       template: ${{ steps.filter.outputs.template }}
 
     steps:
@@ -72,24 +69,10 @@ jobs:
               - *tools
               - .github/workflows/k8s-validate.yml
               - .kube-linter.yaml
-              - helm/.kubelinterignore.yaml
               - scripts/k8s-validate.sh
               - tests/test-k8s-validate.sh
               - tests/test-kube-linter-config.sh
-              - tests/test-service-repos.sh
-              - version.txt
-              - k8s/**
-              - charts/**
-              - helm/**
-            tofu:
-              - *tools
-              - .tflint.hcl
-              - tests/test-trivyignore.sh
-              - tf/**
-            ansible:
-              - *python
-              - ansible/**
-              - tests/test-ansible-collection.sh
+              - tests/fixtures/**
             yaml:
               - *python
               - .yamllint.yaml
@@ -105,12 +88,6 @@ jobs:
             shell:
               - *tools
               - "**/*.sh"
-            renovate:
-              - *tools
-              - .github/renovate.json
-              - renovate/**
-              - tests/renovate/**
-              - tests/test-renovate-presets.sh
             template:
               - *python
               - .github/workflows/pr-title.yml
@@ -169,43 +146,11 @@ jobs:
     uses: ./.github/workflows/k8s-validate.yml
     with:
       kustomize-roots: |
-        k8s/tests/example
-        k8s/tests/valkey
-        k8s/tests/valkey-persistence
-        k8s/tests/valkey-exporter
-        k8s/tests/valkey-acl
-        k8s/tests/valkey-full
-        k8s/tests/service-repos
-        k8s/tests/default-perimeter
-        k8s/tests/default-perimeter-port
-        k8s/tests/gvisor-runtimeclass
-        k8s/tests/cloudflared
-        k8s/tests/argocd-networkpolicy
+        tests/fixtures/k8s/tests/example
       helm-charts: |
-        charts/example
-        charts/service-tenant
-        helm/external-secrets/test-chart
-        helm/gitea/test-chart
-        helm/cloudnative-pg/test-chart
-        helm/plugin-barman-cloud/test-chart
-        helm/argo-workflows/test-chart
-        helm/cert-manager/test-chart
-        helm/traefik/test-chart
-        helm/loki/test-chart
-        helm/otel-collector/test-chart
-        helm/tempo/test-chart
-        helm/prometheus-operator-crds/test-chart
-        helm/prometheus/test-chart
-        helm/k8s-monitoring/test-chart
-        helm/grafana/test-chart
-        helm/argo-cd/test-chart
-        helm/argocd-image-updater/test-chart
-        helm/mattermost-operator/test-chart
-        helm/pyroscope/test-chart
+        tests/fixtures/charts/example
       promtool-rules: |
-        k8s/components/example/rules/example.rules.yaml
-      kube-linter-ignorefile: helm/.kubelinterignore.yaml
-      trivy-ignorefile: helm/.trivyignore.yaml
+        tests/fixtures/k8s/components/example/rules/example.rules.yaml
 
   # The one check of the Kubernetes validation that a ruleset can require. It always reports, and it
   # fails when the validation or the job changes failed or was cancelled
@@ -264,8 +209,8 @@ jobs:
         timeout-minutes: 3
         run: mise exec -- tests/test-kube-linter-config.sh
 
-  k8s-templates:
-    name: K8s templates
+  k8s-script:
+    name: K8s script
     needs: changes
     if: >-
       !cancelled() && (github.event_name == 'workflow_dispatch' || needs.changes.outputs.k8s == 'true')
@@ -291,141 +236,13 @@ jobs:
         timeout-minutes: 3
         run: mise install --locked kustomize yq helm kubeconform trivy kube-linter
 
-      # The test renders the test overlay and the Application templates of the ApplicationSets for
-      # each test services entry, and checks them (tests/test-service-repos.sh).
-      - name: Test the base service-repos
-        timeout-minutes: 3
-        run: mise exec -- tests/test-service-repos.sh
-
-      # The test runs the steps of scripts/k8s-validate.sh on fixtures: the render of a test chart
-      # and of each object to its own file, the schema of a CRD, and the scope of each entry of
-      # helm/.trivyignore.yaml and helm/.kubelinterignore.yaml (tests/test-k8s-validate.sh).
+      # The test runs the steps of scripts/k8s-validate.sh on the fixtures of tests/fixtures/ and on
+      # files that it writes: the render of a test chart and of each object to its own file, the
+      # schema of a CRD, and the scope of each entry of a trivy and of a kube-linter ignore file
+      # (tests/test-k8s-validate.sh).
       - name: Test scripts/k8s-validate.sh
         timeout-minutes: 5
         run: mise exec -- tests/test-k8s-validate.sh
-
-  tofu:
-    name: OpenTofu
-    needs: changes
-    if: >-
-      !cancelled() && (github.event_name == 'workflow_dispatch' || needs.changes.outputs.tofu == 'true')
-    runs-on: ubuntu-26.04
-    timeout-minutes: 15
-    permissions:
-      contents: read
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Install mise
-        uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
-        with:
-          version: "2026.11.14"
-          install: false
-          cache: false
-
-      - name: Install OpenTofu, tflint and trivy
-        timeout-minutes: 3
-        run: mise install --locked opentofu tflint trivy
-
-      - name: Check the format
-        timeout-minutes: 2
-        run: mise exec -- tofu fmt -check -recursive -diff tf/
-
-      - name: Run tflint
-        timeout-minutes: 3
-        env:
-          # tflint reads the plugin releases from GitHub with this token.
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          mise exec -- tflint --init --config "$PWD/.tflint.hcl"
-          mise exec -- tflint --recursive --config "$PWD/.tflint.hcl"
-
-      # trivy config scans each example with the registry modules that it calls, and with the
-      # values of its <folder>.tfvars.example, so it can evaluate the expressions that use a
-      # variable. A bare `trivy config tf/` gets no value, so it reports GCP-0061 on the GCP
-      # example. One scan of tf/ with the three files gives each example the values of all three,
-      # so a variable of two files gets one value in both. tf/.trivyignore.yaml holds the written
-      # judgment of each finding
-      # that stays. --skip-dirs keeps the module copies of a local tofu init out of the scan;
-      # trivy downloads and scans the registry modules itself.
-      - name: Scan each example with trivy config
-        timeout-minutes: 5
-        run: |
-          for example in tf/examples/*/; do
-            echo "trivy config $example"
-            tfvars="${example}$(basename "$example").tfvars.example"
-            vars=()
-            if [ -f "$tfvars" ]; then
-              vars=(--tf-vars "$tfvars")
-            fi
-            mise exec -- trivy config --exit-code 1 --severity HIGH,CRITICAL \
-              --ignorefile tf/.trivyignore.yaml --skip-dirs '**/.terraform' "${vars[@]}" "$example"
-          done
-
-      - name: Test trivyignore expiry behavior
-        timeout-minutes: 5
-        run: mise exec -- tests/test-trivyignore.sh
-
-      # tofu init downloads the registry modules and the providers of the lock file of each example.
-      - name: Validate each example
-        timeout-minutes: 5
-        run: |
-          for example in tf/examples/*/; do
-            echo "tofu validate $example"
-            mise exec -- tofu -chdir="$example" init -backend=false -input=false
-            mise exec -- tofu -chdir="$example" validate
-          done
-
-  ansible:
-    name: Ansible
-    needs: changes
-    if: >-
-      !cancelled() && (github.event_name == 'workflow_dispatch' || needs.changes.outputs.ansible == 'true')
-    runs-on: ubuntu-26.04
-    timeout-minutes: 10
-    permissions:
-      contents: read
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Install mise
-        uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
-        with:
-          version: "2026.11.14"
-          install: false
-          cache: false
-
-      - name: Install uv and the Python tools of uv.lock
-        timeout-minutes: 5
-        run: |
-          mise install --locked uv
-          mise exec -- uv sync --frozen
-          echo "$PWD/.venv/bin" >>"$GITHUB_PATH"
-
-      - name: Run ansible-lint
-        timeout-minutes: 5
-        working-directory: ansible
-        run: ansible-lint
-
-      - name: Build the collection
-        timeout-minutes: 2
-        run: |
-          ansible-galaxy collection build ansible/ --output-path "$RUNNER_TEMP"
-          ls "$RUNNER_TEMP"/dan_petty-infra-*.tar.gz
-
-      # The test installs the archive of the collection, as a consumer does, and runs the test plays
-      # of ansible/tests/ with the example inventory (ansible/README.md, "Check the collection").
-      - name: Test the roles and plays
-        timeout-minutes: 3
-        run: tests/test-ansible-collection.sh
 
   yaml:
     name: YAML
@@ -541,41 +358,6 @@ jobs:
         timeout-minutes: 2
         run: git ls-files -z '*.sh' | xargs -0 mise exec -- shellcheck
 
-  renovate:
-    name: Renovate presets
-    needs: changes
-    if: >-
-      !cancelled() && (github.event_name == 'workflow_dispatch' || needs.changes.outputs.renovate == 'true')
-    runs-on: ubuntu-26.04
-    timeout-minutes: 10
-    permissions:
-      contents: read
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Install mise
-        uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
-        with:
-          version: "2026.11.14"
-          install: false
-          cache: false
-
-      - name: Install Node and jq
-        timeout-minutes: 3
-        run: mise install --locked node jq
-
-      # npx installs the Renovate release of the test. The lookup of the pins reads the GitHub API
-      # with the token of the job, which can only read (permissions: contents: read).
-      - name: Validate the presets and extract and look up the pins of the fixture
-        timeout-minutes: 6
-        env:
-          RENOVATE_GITHUB_COM_TOKEN: ${{ github.token }}
-        run: mise exec -- tests/test-renovate-presets.sh
-
   template:
     name: Repository template
     needs: changes
@@ -609,8 +391,8 @@ jobs:
 
       # The test renders the template with each answer set and checks the files with actionlint,
       # yamllint, tomllib, pre-commit, check-jsonschema and the config validator of Renovate
-      # (tests/test-repository-template.sh). It also checks that infra holds each reusable workflow
-      # that a rendered caller calls. npx installs the Renovate release of the test, and
+      # (tests/test-repository-template.sh). It also checks that this repository holds each reusable
+      # workflow that a rendered caller calls. npx installs the Renovate release of the test, and
       # check-jsonschema downloads the release-please schemas of the test.
       - name: Render and check the template with each answer set
         timeout-minutes: 6

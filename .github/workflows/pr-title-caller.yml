@@ -1,11 +1,11 @@
 name: PR Title
 
-# release-please reads the title of each squash commit on main as a Conventional Commit, so the
-# reusable workflow pr-title.yml of infra checks the title of each pull request into main. A scope
-# is one of the scope/* labels of .github/labels.yml, or main, the scope of the release pull request.
-# The caller pins the commit of the release tag of infra that rendered this file, with the tag in a
-# comment: the form of a digest pin of the github-actions manager of Renovate. Only `copier update`
-# changes both: Renovate leaves this pin to the template.
+# The title check of each pull request into main of this repository (README.md, "Releases"). The
+# job calls the reusable workflow pr-title.yml of the same commit, as each other repository calls it
+# at a release tag. Thus each pull request also tests the workflow, and this repository pins no
+# release of itself. The scopes are those of every repository and those of the scope/* labels of
+# .github/labels.yml. The check has the name PR title / Semantic PR title, which the ruleset main
+# requires (github/repository.yaml).
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
@@ -17,7 +17,7 @@ permissions: {}
 jobs:
   pr-title:
     name: PR title
-    uses: dan-petty/infra/.github/workflows/pr-title.yml@64af9c830f645d16d1dd97e1794a98fbb512863b # v0.26.1
+    uses: ./.github/workflows/pr-title.yml
     permissions:
       contents: read # Read .github/labels.yml.
       pull-requests: read # Read the title and the commits of the pull request.

@@ -1,13 +1,13 @@
 name: K8s Validate
 
 # The shared checks of Kubernetes manifests, Helm charts and Prometheus rules, as a reusable
-# workflow. .github/workflows/ci.yml calls it for the fixtures of infra. Another repository calls it
-# at the commit <sha> of a release tag of infra, with the tag in a comment, and Renovate updates both
-# (README.md, "Pin a release"):
+# workflow. .github/workflows/ci.yml calls it for the fixtures of tests/fixtures/. Another repository
+# calls it at the commit <sha> of a release tag of this repository, with the tag in a comment, and
+# Renovate updates both (README.md, "Pin a release"):
 #
 #   jobs:
 #     k8s:
-#       uses: dan-petty/infra/.github/workflows/k8s-validate.yml@<sha> # vX.Y.Z
+#       uses: dan-petty/github-workflows/.github/workflows/k8s-validate.yml@<sha> # vX.Y.Z
 #       permissions:
 #         contents: read
 #       with:
@@ -17,14 +17,14 @@ name: K8s Validate
 # The job runs on the runner label of the input runs-on, so a caller can select its own runner. Empty
 # selects the GitHub-hosted runner ubuntu-26.04 (README.md, "Call the reusable workflows").
 #
-# The job checks out the repository of the caller, and the infra commit of this workflow
-# (job.workflow_sha) into .infra-workflow. It installs the tools of the mise.toml and mise.lock of
-# that commit, so each caller runs the tools at the versions of its infra tag. Each check step runs
-# one step of scripts/k8s-validate.sh, which a local run can also run (README.md, "Checks"):
+# The job checks out the repository of the caller, and the commit of this workflow
+# (job.workflow_sha) into .workflow-source. It installs the tools of the mise.toml and mise.lock of
+# that commit, so each caller runs the tools at the versions of its tag. Each check step runs one
+# step of scripts/k8s-validate.sh, which a local run can also run (README.md, "Checks"):
 # kustomize build and helm template into kubeconform -strict (with the CRD schemas of the datreeio
 # CRDs-catalog), kube-linter and trivy config, and helm lint, helm unittest and promtool check rules.
 # A test chart of a values template gets the template under the name of its dependency
-# (helm/README.md).
+# (README.md, "k8s-validate.yml").
 on:
   workflow_call:
     inputs:
@@ -45,7 +45,9 @@ on:
         type: string
         default: ""
       kube-linter-config:
-        description: The kube-linter config file of the caller. Empty selects the shared .kube-linter.yaml of infra.
+        description: >-
+          The kube-linter config file of the caller. Empty selects the shared .kube-linter.yaml of
+          this repository.
         type: string
         default: ""
       kube-linter-ignorefile:
@@ -94,12 +96,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Check out the infra commit of this workflow
+      - name: Check out the commit of this workflow
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ job.workflow_repository }}
           ref: ${{ job.workflow_sha }}
-          path: .infra-workflow
+          path: .workflow-source
           persist-credentials: false
           sparse-checkout-cone-mode: false
           sparse-checkout: |
@@ -119,7 +121,7 @@ jobs:
       # their folders first on PATH. A mise.toml of the caller does not change them.
       - name: Install the tools of mise.lock
         timeout-minutes: 5
-        working-directory: .infra-workflow
+        working-directory: .workflow-source
         env:
           WORKFLOW_SHA: ${{ job.workflow_sha }}
         run: |
