@@ -147,23 +147,6 @@ url = "https://nodejs.org/dist/v26.13.1/node-v26.13.1-linux-arm64.tar.gz"
 checksum = "sha256:518674de2b621728a5e4486f5fb3b7d2900bb3cc4aa97969edaa463db99f9778"
 url = "https://nodejs.org/dist/v26.13.1/node-v26.13.1-linux-x64.tar.gz"
 
-[[tools.opentofu]]
-version = "1.13.10"
-backend = "aqua:opentofu/opentofu"
-specifiers = ["1.13.10"]
-
-[tools.opentofu."platforms.linux-arm64"]
-checksum = "sha256:9dcdabf93c5209feaa35a7bb6d41f4d71b0880c4c4dfaf275d612f5b6facc28a"
-checksum_source = "mise-versions"
-url = "https://github.com/opentofu/opentofu/releases/download/v1.13.10/tofu_1.13.10_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/opentofu/opentofu/releases/assets/784195569"
-
-[tools.opentofu."platforms.linux-x64"]
-checksum = "sha256:f606b6117ee03177374806d56d580bde7b512aff69f86d2b9f3148dced4ca375"
-checksum_source = "mise-versions"
-url = "https://github.com/opentofu/opentofu/releases/download/v1.13.10/tofu_1.13.10_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/opentofu/opentofu/releases/assets/784195222"
-
 [[tools.promtool]]
 version = "3.16.0"
 backend = "aqua:prometheus/prometheus"
@@ -197,23 +180,6 @@ checksum = "sha256:8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227
 checksum_source = "mise-versions"
 url = "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.xz"
 url_api = "https://api.github.com/repos/koalaman/shellcheck/releases/assets/279056942"
-
-[[tools.tflint]]
-version = "0.66.0"
-backend = "aqua:terraform-linters/tflint"
-specifiers = ["0.66.0"]
-
-[tools.tflint."platforms.linux-arm64"]
-checksum = "sha256:1105a0a5ddee7cdac7957a3475571a946b839192ea1bc0c722c6c4686001067e"
-url = "https://github.com/terraform-linters/tflint/releases/download/v0.66.0/tflint_linux_arm64.zip"
-url_api = "https://api.github.com/repos/terraform-linters/tflint/releases/assets/724463994"
-provenance = "github-attestations"
-
-[tools.tflint."platforms.linux-x64"]
-checksum = "sha256:22be11cadc25cd02401e94c0ccc91aa63467debb8485c2a755d98f4c0a9d1e2e"
-url = "https://github.com/terraform-linters/tflint/releases/download/v0.66.0/tflint_linux_amd64.zip"
-url_api = "https://api.github.com/repos/terraform-linters/tflint/releases/assets/724464090"
-provenance = "github-attestations"
 
 [[tools.trivy]]
 version = "0.76.2"

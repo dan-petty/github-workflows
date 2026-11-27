@@ -1,17 +1,15 @@
 # The Python tools of the checks. `uv sync --frozen` installs them into .venv at the versions of
 # uv.lock, with the hash of each package. After a change of a version here, run `uv lock`.
 [project]
-name = "infra"
+name = "github-workflows"
 version = "0"
-description = "Shared infrastructure templates and their checks"
+description = "Reusable GitHub Actions workflows and the Copier repository template, with their checks"
 requires-python = ">=3.15.2,<3.16"
 dependencies = []
 
 [dependency-groups]
 # The lint tools of CI and pre-commit for the hooks. uv sync installs the dev group by default.
 dev = [
-  "ansible-core==2.22.0",
-  "ansible-lint==26.11.1",
   "check-jsonschema==0.39.0",
   "copier==9.19.1",
   "pre-commit==4.7.0",
