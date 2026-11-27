@@ -1,12 +1,12 @@
 # The Copier template of a new repository of dan-petty (templates/README.md). `devops repos onboard`
-# renders it at a release tag of infra, with the answers of its flags:
-#   copier copy --vcs-ref vX.Y.Z --data scopes=api https://github.com/dan-petty/infra.git <dir>
+# renders it at a release tag of this repository, with the answers of its flags:
+#   copier copy --vcs-ref vX.Y.Z --data scopes=api https://github.com/dan-petty/github-workflows.git <dir>
 # Copier renders only the files of templates/repository/. A file with the suffix .jinja holds an
 # answer: Copier renders it and removes the suffix. Copier copies each other file as it is. The
 # template has no _tasks and no _jinja_extensions, so Copier runs it without --trust. Copier writes
 # the answers into .copier-answers.yml, and the copier manager of Renovate updates the repository to
-# the newest release tag of infra with `copier update`. infra itself is the template source, not a
-# render of it, so it has no .copier-answers.yml.
+# the newest release tag of this repository with `copier update`. This repository is the template
+# source, not a render of it, so it has no .copier-answers.yml.
 
 # Copier 9.2.0 matches each pattern of _exclude with the rendered path, with no suffix .jinja.
 _min_copier_version: "9.2.0"
@@ -113,11 +113,12 @@ code_coverage:
     default is false. Answer true for a repository that reports coverage.
   default: false
 
-# The release tag of infra in the comment of each caller of a reusable workflow. Copier gives
-# _commit, the tag that it renders. The caller pins _copier_conf.vcs_ref_hash, the commit of that
-# tag, so it always calls the workflows of that tag. Copier does not ask it and does not write it
-# into .copier-answers.yml, so `copier update` gives the callers the new tag and its commit.
-infra_ref:
+# The release tag of this repository in the comment of each caller of a reusable workflow. Copier
+# gives _commit, the tag that it renders. The caller pins _copier_conf.vcs_ref_hash, the commit of
+# that tag, so it always calls the workflows of that tag: the template and the workflows have one
+# release. Copier does not ask it and does not write it into .copier-answers.yml, so `copier update`
+# gives the callers the new tag and its commit.
+template_ref:
   type: str
   when: false
   default: "{{ _commit }}"
