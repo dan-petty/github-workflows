@@ -1,0 +1,28 @@
+name: Release
+
+# The releases of this repository (README.md, "Releases"). On each push to main, the job calls the
+# reusable workflow release.yml of the same commit, as each other repository calls it at the commit
+# of a release tag. Thus each release also tests the workflow, and this repository pins no release
+# of itself. The release pull request holds the next version in version.txt and
+# .release-please-manifest.json (release-please-config.json).
+on:
+  push:
+    branches:
+      - main
+
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release
+    uses: ./.github/workflows/release.yml
+    # The token of the release App writes the release; the job token gets no permission.
+    permissions: {}
+    # The job of release.yml runs in the environment release, so it gets the value of the secret of
+    # that environment. The caller passes no other secret: no `secrets: inherit`.
+    secrets:
+      RELEASE_APP_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}

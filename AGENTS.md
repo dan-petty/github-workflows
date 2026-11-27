@@ -1,29 +1,30 @@
 # github-workflows — AI Agent Instructions
 
-github-workflows workspace tooling and development environment.
+github-workflows holds the reusable GitHub Actions workflows and the Copier repository template of the repositories of dan-petty, and the checks that test them.
 
-> **Canonical Source**: This file is the single source of truth for AI agent instructions. [CLAUDE.md](./CLAUDE.md), [GEMINI.md](./GEMINI.md) and [.github/copilot-instructions.md](./.github/copilot-instructions.md) are thin pointers to this file. It holds the rules for every task and sends each kind of task to the document that owns it.
+This file is the single source of truth for AI agent instructions. [CLAUDE.md](./CLAUDE.md), [GEMINI.md](./GEMINI.md) and [.github/copilot-instructions.md](./.github/copilot-instructions.md) are thin pointers to this file.
 
 ## Rules for every task
 
-1. **One issue, one pull request.** Work on a topic branch. Topic PRs target the default branch. The PR title is a Conventional Commit, and the PR body closes its one issue (`Closes #<issue>`). Plan it as the OpenSpec change `openspec/changes/<issue>-<slug>/`, and archive the change in the last commit with `devops openspec archive <change>`.
-2. **Check the premise first.** Confirm it against the real system: upstream documents, library source or command output. Never return a tracker: work its open sub-issues or related issues. If a leaf item cannot be built as written, write no compensating code: comment the evidence on the issue and stop. Close issues as rejected if their functionality has been superseded by newer issues or code changes.
-3. **Use an open tool before you build.** Name the tool or library that covers the need.
-4. **Test new behavior first.** Write the failing test before the code. Prove any other change with a command.
-5. **Pass the checks.** Push only when the checks pass. Never lower a threshold unless the owner allows it.
-6. **Open every pull request as a draft.** Agents open every pull request with `devops pr create`, which always opens a draft. Watch it with `devops pr monitor <pr_number>`. Always mark it ready with `devops pr ready <pr_number>` when the checks pass and no agent work remains. Reply to each review comment in its thread. Copilot reviews a pull request only when a person requests it.
-7. **Use `devops gh` and `devops pr`.** Never run bare `gh`: `devops` paces each request against the rate limit. Run one `devops ai` call at a time.
-8. **Write as merged.** Make no commit that only updates tracking. If your change makes a document wrong, fix that document in the same pull request.
-9. **Keep private data out of the repository.** Never commit a secret, the content of a gitignored file, an internal hostname or a private IP address. Use `example.com` and RFC 5737 addresses.
-10. **Fix the cause.** If an outside constraint blocks the fix, add a check that fails when the problem returns.
-11. **Keep your own files out of git.** Put scratch files in a gitignored folder. Back up a file outside the workspace before you edit it.
-12. **Keep tool output small.** Search before you read, and read only the lines you need. Ask each command for less output. Keep each fact that the reader needs: error lines, `file:line`, failed test IDs.
-
-Only a person merges pull requests.
+1. Branch from `main` and open a pull request for every change. Open it as a draft with `devops pr create`, and close its one issue (`Closes #<issue>`).
+2. Plan each item as the OpenSpec change `openspec/changes/<issue>-<slug>/`, and archive the change in the last commit with `devops openspec archive <change>`.
+3. Write the test before the code.
+4. Before you push, run the command of each CI job whose files your change touches (README.md, "Checks").
+5. Keep secrets and private data out of the repository: use `example.com` and the RFC 5737 addresses in all templates. Keep the private-data guard passing.
+6. Pin consumers at the commit of a release tag `vX.Y.Z`, with the tag in a comment, never at `main`. This repository calls its own workflows with `./.github/workflows/<workflow>.yml`.
+7. Install the tools with `mise install --locked` and `uv sync --frozen` (README.md, "Tools"). Run `uv lock` after a version change in `pyproject.toml`.
+8. Change a file that the template renders in `templates/repository/` or in `copier.yml`, and keep the cases of `tests/test-repository-template.sh` passing.
+9. Keep the names of the jobs that a ruleset requires, such as `PR title / Semantic PR title` and `K8s`.
+10. Write the pull request title and each commit subject that lands on `main` as a Conventional Commit. release-please reads their types for the next release version (README.md, "Releases"). A change of a workflow input or a template question that a caller must follow is a breaking change.
+11. Use `devops gh` and `devops pr`, never bare `gh`. Only a person merges pull requests.
 
 ## Where to look
 
 | When you | Read |
-| :--- | :--- |
-| plan and record each item as an OpenSpec change | [openspec/config.yaml](openspec/config.yaml) |
-| learn a `devops` command | `devops <command> --help` |
+| --- | --- |
+| Start a task or look up a rule | [README.md](./README.md) |
+| Call or change a reusable workflow | [README.md](./README.md), "Call the reusable workflows" |
+| Change the repository template | [templates/README.md](./templates/README.md) |
+| Make a release or choose a commit type | [README.md](./README.md), "Releases" |
+| Run a check | [README.md](./README.md), "Checks" |
+| Plan an item as an OpenSpec change | [openspec/config.yaml](./openspec/config.yaml), [openspec/specs/](./openspec/specs/) |

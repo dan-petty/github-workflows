@@ -1,0 +1,26 @@
+# yamllint settings of the YAML job of CI, which runs `yamllint --strict .` in the repository root.
+# tests/test-repository-template.sh also checks each rendered YAML file of the template with this
+# file. The rules are the default rules, with the settings that ansible-lint needs (comments, braces
+# and octal values). The templates of a Helm chart are Go templates, not YAML. The other ignored
+# path is the tool output that .gitignore covers.
+extends: default
+
+ignore: |
+  .venv/
+  tests/fixtures/charts/*/templates/
+
+rules:
+  braces:
+    max-spaces-inside: 1
+  comments:
+    min-spaces-from-content: 1
+  comments-indentation: false
+  document-start: disable
+  line-length:
+    max: 120
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: true
+  # The key `on` of a GitHub Actions workflow is no boolean.
+  truthy:
+    check-keys: false

@@ -1,0 +1,23 @@
+name: PR Title
+
+# The title check of each pull request into main of this repository (README.md, "Releases"). The
+# job calls the reusable workflow pr-title.yml of the same commit, as each other repository calls it
+# at a release tag. Thus each pull request also tests the workflow, and this repository pins no
+# release of itself. The scopes are those of every repository and those of the scope/* labels of
+# .github/labels.yml. The check has the name PR title / Semantic PR title, which the ruleset main
+# requires (github/repository.yaml).
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    branches:
+      - main
+
+permissions: {}
+
+jobs:
+  pr-title:
+    name: PR title
+    uses: ./.github/workflows/pr-title.yml
+    permissions:
+      contents: read # Read .github/labels.yml.
+      pull-requests: read # Read the title and the commits of the pull request.

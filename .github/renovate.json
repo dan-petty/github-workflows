@@ -1,5 +1,36 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "description": "Renovate opens the dependency update pull requests of this repository with the shared preset of infra: the schedule, the groups, the labels and the automerge of each update after all checks pass. The copier manager updates the files of the template of infra to each new release tag of infra.",
-  "extends": ["github>dan-petty/infra//renovate/base"]
+  "description": "Renovate opens the dependency update pull requests of this repository with the shared preset of dan-petty/infra: the schedule, the groups, the labels and the automerge of each update after all checks pass. This repository is the template source, not a render of it, so it has no copier update. config:recommended ignores each tests/ folder, but the tests of this repository are checks that CI runs, so Renovate updates them too.",
+  "extends": [
+    "github>dan-petty/infra//renovate/base"
+  ],
+  "ignorePaths": [
+    "**/node_modules/**"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "The Renovate release of tests/test-repository-template.sh, which runs the config validator with npx, and the release-please release whose schemas the test reads.",
+      "managerFilePatterns": [
+        "/^tests/test-repository-template\\.sh$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n[A-Z_]+_VERSION=(?<currentValue>\\S+)"
+      ]
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Renovate publishes several releases a day, so even a patch of the npm package waits for the schedule, as the Renovate images do in the base preset.",
+      "matchDatasources": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "renovate"
+      ],
+      "schedule": [
+        "* * * * 1"
+      ]
+    }
+  ]
 }
