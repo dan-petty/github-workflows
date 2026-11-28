@@ -13,10 +13,10 @@
 #   - check-jsonschema: github/repository.yaml with templates/github-repository.schema.json, and the
 #     release-please files with the schemas of the release-please release of RELEASE_PLEASE_VERSION,
 #   - the config validator of Renovate, in strict mode, on .github/renovate.json,
-#   - the answers in the files: the scope labels and their descriptions, the release type, the
-#     environment release, the secret that the release caller passes by name, the code owner, and
-#     the required checks: the title check of the template and each check of the answer
-#     required_checks,
+#   - the answers in the files: the scope labels and their descriptions, the extra labels of
+#     extra_labels after the labels of the template, the release type, the environment release,
+#     the secret that the release caller passes by name, the code owner, and the required checks:
+#     the title check of the template and each check of the answer required_checks,
 #   - the pin of each caller of a reusable workflow of this repository: the commit that Copier
 #     renders, with the tag (template_ref, else _commit) in a comment, and no bare tag, and no
 #     caller of a workflow of dan-petty/infra, the earlier home of the workflows,
@@ -28,8 +28,9 @@
 #   - that a render of a template folder with no git fails with a message, and writes no `@None`,
 #   - that this repository holds each workflow that a caller calls as a reusable workflow, with
 #     each secret that the release caller passes,
-#   - that Copier refuses a scope that is not a lowercase name, a check name that is not plain, and a
-#     scope description of an unknown scope, or that is not a plain text of 1 to 100 characters.
+#   - that Copier refuses a scope that is not a lowercase name, a check name that is not plain, a
+#     scope description of an unknown scope, or that is not a plain text of 1 to 100 characters, and
+#     an extra label that is a label of the template or that GitHub or the YAML file cannot hold.
 # Run it from the repository root after `uv sync --frozen`: `mise exec -- tests/test-repository-template.sh`.
 # npx installs the Renovate release of RENOVATE_VERSION with the Node of mise.toml, and runs no
 # install script of a package. check-jsonschema downloads the release-please schemas from GitHub.
@@ -351,6 +352,26 @@ expect "described: the descriptions of the scope labels" \
   "$(yq -r '[.[] | select(.name | test("^scope/")) | .description] | join("|")' \
     "$work/described/.github/labels.yml")"
 
+# The answer extra_labels gives the repository its own labels that are not scopes, such as a label
+# that a workflow of the repository applies. The template writes them after its own labels, with
+# the color and the description of the answer, and keeps the answer in .copier-answers.yml, so
+# `copier update` and `copier recopy --skip-answered` keep the labels.
+render extra release_flow=true scopes=api 'extra_labels={
+  certified-by-sentinel: {color: 0E8A16, description: "The sentinel workflow found no violation"},
+  needs-guardrail: {color: d93f0b, description: "A fix that a written rule would have prevented"}}'
+validate extra
+expect "extra: labels" \
+  "scope/ci scope/deps scope/docs scope/api autorelease: pending autorelease: tagged certified-by-sentinel needs-guardrail" \
+  "$(labels extra)"
+expect "extra: the color and the description of each extra label" \
+  "certified-by-sentinel 0E8A16 The sentinel workflow found no violation|needs-guardrail d93f0b A fix that a written rule would have prevented" \
+  "$(yq -r '[.[] | select(.name | test("^(scope/|autorelease: )") | not)
+    | .name + " " + .color + " " + .description] | join("|")' "$work/extra/.github/labels.yml")"
+expect "extra: extra_labels in .copier-answers.yml" "certified-by-sentinel needs-guardrail" \
+  "$(yq -r '.extra_labels | keys | join(" ")' "$work/extra/.copier-answers.yml")"
+expect "defaults: extra_labels is {} in .copier-answers.yml" "{}" \
+  "$(yq -o=json -I=0 '.extra_labels' "$work/defaults/.copier-answers.yml")"
+
 # The release flow with each release type, and two scopes of the repository. A scope of the
 # template, here docs, comes once.
 for type in simple python node; do
@@ -414,6 +435,41 @@ for data in "scopes=Bad Scope" "scopes=api,main" "required_checks=K8s: lint" \
   if copier copy --quiet --defaults --vcs-ref HEAD --data "template_ref=$ref" --data "$data" \
     "$root" "$work/refused" >"$work/refused.log" 2>&1; then
     echo "FAIL copier refuses $data"
+    failures=$((failures + 1))
+  else
+    echo "ok   copier refuses $data"
+  fi
+  rm -rf "$work/refused"
+done
+
+# Copier refuses an extra label with the message of the validator of extra_labels: a name of a label
+# of the template in any case (scope/* comes from the answer scopes, autorelease: * from
+# release-please), one name twice with another letter case, a name that is not a text of 1 to 50
+# characters, a color that is not a text of six hexadecimal digits (123456 with no quotes is a
+# number), no description or a description that GitHub or the YAML file cannot hold, a key other
+# than color and description, and a list in place of a mapping.
+long="$(printf 'x%.0s' {1..51})"
+for data in 'extra_labels={scope/docs: {color: DCDCD6, description: "The docs"}}' \
+  'extra_labels={Scope/API: {color: DCDCD6, description: "The API"}}' \
+  'extra_labels={"autorelease: pending": {color: DCDCD6, description: "Pending"}}' \
+  'extra_labels={bug: {color: D73A4A, description: "A"}, BUG: {color: D73A4A, description: "B"}}' \
+  'extra_labels={"a \"bug\"": {color: D73A4A, description: "A bug"}}' \
+  "extra_labels={$long: {color: D73A4A, description: \"A bug\"}}" \
+  'extra_labels={bug: {color: "#D73A4A", description: "A bug"}}' \
+  'extra_labels={bug: {color: D73A4, description: "A bug"}}' \
+  'extra_labels={bug: {color: 123456, description: "A bug"}}' \
+  'extra_labels={bug: {color: D73A4A}}' \
+  'extra_labels={bug: {color: D73A4A, description: "A \"bug\""}}' \
+  'extra_labels={bug: {color: D73A4A, description: "A bug", colour: D73A4A}}' \
+  'extra_labels={bug: D73A4A}' 'extra_labels=[bug]'; do
+  cases=$((cases + 1))
+  if copier copy --quiet --defaults --vcs-ref HEAD --data "template_ref=$ref" --data "$data" \
+    "$root" "$work/refused" >"$work/refused.log" 2>&1; then
+    echo "FAIL copier refuses $data"
+    failures=$((failures + 1))
+  elif ! grep -q "Validation error for question 'extra_labels'" "$work/refused.log"; then
+    echo "FAIL copier refuses $data: the message of the validator of extra_labels is missing"
+    tail -n 3 "$work/refused.log" | sed 's/^/     /'
     failures=$((failures + 1))
   else
     echo "ok   copier refuses $data"
