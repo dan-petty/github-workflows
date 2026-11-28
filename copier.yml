@@ -93,6 +93,40 @@ scope_descriptions:
     The description of the scope "{{ scope }}" is not a text of 1 to 100 characters with no " or \.
     {% endif %}{% endfor %}{% endif %}
 
+extra_labels:
+  type: yaml
+  help: >-
+    The labels of the repository that are not scopes, such as a label that a workflow of the
+    repository applies, by name, each with its color and description, such as {needs-review:
+    {color: "D93F0B", description: "A change that a person must review"}}. The template writes them
+    into .github/labels.yml after its own labels. The scope/* labels come from scopes, and the
+    autorelease: labels from release-please. GitHub allows 50 characters in a name and 100 in a
+    description.
+  default: {}
+  validator: >-
+    {% if extra_labels is not mapping -%}
+    The extra labels are a mapping of a name to its color and description, such as {needs-review:
+    {color: "D93F0B", description: "A change that a person must review"}}.
+    {% else %}{% set names = extra_labels.keys() | map('string') | map('lower') | list -%}
+    {% for name, label in extra_labels.items() -%}
+    {% if name is not string or not name or name | length > 50 or '"' in name or '\\' in name -%}
+    The label name "{{ name }}" is not a text of 1 to 50 characters with no " or \.
+    {% elif (name | lower).startswith(('scope/', 'autorelease:')) -%}
+    The label "{{ name }}" is a label of the template: a scope/* label comes from scopes, and an
+    autorelease: label from release-please.
+    {% elif names | select('equalto', name | lower) | list | length > 1 -%}
+    The label "{{ name }}" is in extra_labels twice, with another letter case. GitHub ignores the letter case.
+    {% elif label is not mapping or label.keys() | map('string') | sort | list != ['color', 'description'] -%}
+    The label "{{ name }}" is not a mapping of a color and a description, such as {color: "D93F0B",
+    description: "A change that a person must review"}.
+    {% elif label['color'] is not string or not (label['color'] | regex_search('^[0-9A-Fa-f]{6}$')) -%}
+    The color of the label "{{ name }}" is not a text of six hexadecimal digits, such as "D93F0B".
+    {% elif label['description'] is not string or not label['description']
+      or label['description'] | length > 100 or '"' in label['description']
+      or '\\' in label['description'] -%}
+    The description of the label "{{ name }}" is not a text of 1 to 100 characters with no " or \.
+    {% endif %}{% endfor %}{% endif %}
+
 required_checks:
   type: str
   help: >-
