@@ -10,7 +10,7 @@ The template owns `.github/labels.yml` (#225) and writes it from the answers `sc
 - `templates/README.md` describes the question, the file, the owner and the re-adoption with `extra_labels`.
 
 ## Capabilities
-- `template-file-owners` (modified): the new requirement "The extra labels are an answer".
+- `template-file-owners` (modified): the new requirements "The extra labels are an answer" and "Copier refuses an extra label that it cannot render".
 
 ## Impact
 - A new question with a default: `copier update --skip-answered --defaults` of a rendered repository gives `extra_labels: {}` and the same labels. The change is not breaking, and its type is `feat`.
