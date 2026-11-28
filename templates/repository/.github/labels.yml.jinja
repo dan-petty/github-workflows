@@ -3,8 +3,9 @@
 # issue the scope/* label of its Conventional Commit scope, and the PR title check accepts each
 # scope of this file. In every repository it also accepts ci, deps, docs, main and spec, with or
 # without a label. Each scope/* label is gray (DCDCD6), as in devops-cli. The template writes this
-# file from the answers scopes and scope_descriptions: change a scope or its description with
-# `copier update --data scopes=<scopes>` or `--data scope_descriptions=<mapping>`, not here.
+# file from the answers scopes, scope_descriptions and extra_labels: change a scope, its description
+# or a label of this repository that is not a scope with `copier update --data scopes=<scopes>`,
+# `--data scope_descriptions=<mapping>` or `--data extra_labels=<mapping>`, not here.
 {%- set template_scopes = {
   'ci': 'GitHub Actions workflows and pre-commit hooks',
   'deps': 'Dependency pins and the updates of Renovate',
@@ -29,4 +30,14 @@
 - name: "autorelease: tagged"
   color: "DCDCD6"
   description: "A release pull request whose release release-please created"
+{%- endif %}
+{%- if extra_labels %}
+
+# The labels of this repository that are not scopes (the answer extra_labels).
+{%- for name, label in extra_labels.items() %}
+
+- name: "{{ name }}"
+  color: "{{ label['color'] }}"
+  description: "{{ label['description'] }}"
+{%- endfor %}
 {%- endif %}
